@@ -4,6 +4,7 @@ from lxml import etree
 import shutil
 import time
 import sys
+import os
 from multiprocessing import Pool
 from contextlib import closing
 
@@ -16,15 +17,20 @@ PTT_BEAUTY_SITE = PTT_SITE + "/bbs/Beauty/index2338.html"
 def download_image(image_url):
     url = "https:" + image_url + ".jpg"
     filename = url[18:]
+    script_dir = os.path.dirname(__file__)
     try:
         res = requests.get(url, stream=True, timeout=10.0)
-        f = open(filename, 'wb')
+        rel_path = "images\\" + filename
+        abs_file_path = os.path.join(script_dir, rel_path)
+        f = open(abs_file_path, 'wb')
         shutil.copyfileobj(res.raw, f)
         f.close()
         del res
     except:
         a, b, c = sys.exc_info()
-        log = open(time.strftime('%Y%m%d_%H%M%S') + '.txt', 'w')
+        rel_path = "err\\" + time.strftime('%Y%m%d_%H%M%S') + '.txt'
+        abs_file_path = os.path.join(script_dir, rel_path)
+        log = open(abs_file_path, 'w')
         log.write(time.strftime('%Y/%m/%d_%H:%M:%S') + '\n')
         log.write('例外類型 : ' + str(a) + '\n')
         log.write('例外訊息 : ' + str(b) + '\n')
@@ -42,14 +48,32 @@ def get_image_urls(article_link):
         "//div[@id='main-content']/div[@class='richcontent']/blockquote/a/@href")
     return image_urls
 
+def createFolder():
+    dir_name1 = "images"
+    dir_name2 = "err"
+
+    if not os.path.exists(dir_name1):
+        os.mkdir(dir_name1)
+        print("Directory " , dir_name1 ,  " Created ")
+    else:
+        print("Directory " , dir_name1 ,  " already exists")
+
+    if not os.path.exists(dir_name2):
+        os.mkdir(dir_name2)
+        print("Directory " , dir_name2 ,  " Created ")
+    else:
+        print("Directory " , dir_name2 ,  " already exists")
+
 
 def main():
     start_time = time.time()
     print("Ptt Web BBS Beauty images Download with %s process" % PROCESS_QUANTITY)
 
+    createFolder()
+
     response = requests.get(PTT_BEAUTY_SITE)
     response.encoding = ENCODING
-    if "批踢踢實業坊" not in response.content:
+    if "批踢踢實業坊" not in response.content.decode():
         print("ERROR : cant connect to %s" % PTT_BEAUTY_SITE)
         print("url : %s, status_code : %s" %
               (response.url, response.status_code))
